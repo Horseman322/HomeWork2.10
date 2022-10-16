@@ -1,30 +1,28 @@
-package service;
+package com.example.homework210.service;
 
-import exception.EmployeeAlreadyAddedException;
-import exception.EmployeeNotFoundException;
-import exception.EmployeeStorageIsFullException;
-import model.Employee;
+import com.example.homework210.exception.*;
+import com.example.homework210.model.Employee;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 @Service
 public class EmployeeService {
 
     private static final int SIZE = 5;
-    private final List<Employee> employees;
+    private final List<Employee> employees = new ArrayList<>();
+    private ValidatorService validatorService;
 
-    public EmployeeService() {
-        this.employees = new ArrayList<>();
-
+    public EmployeeService(ValidatorService validatorService){
+        this.validatorService = validatorService;
     }
 
+
     public Employee addEmployee(String name,
-                                String secondName) {
-        Employee employee = new Employee(name, secondName);
+                                String secondName) throws IncorrectNameException, IncorrectSecondNameException {
+        Employee employee = new Employee(
+                validatorService.validateName(name),
+                validatorService.validateSecondName(secondName));
         if (employees.contains(employee)) {
             throw new EmployeeAlreadyAddedException();
         }
@@ -37,23 +35,25 @@ public class EmployeeService {
 
     public Employee removeEmployee(String name,
                                    String secondName) {
-        Employee employee = new Employee(name, secondName);
-        if (employees.contains(employee)) {
+        Employee employee = employees.stream()
+                .filter(employee1 -> employee1.getName().equals(name) && employee1.getSecondName().equals(secondName))
+                .findFirst()
+                .orElseThrow(EmployeeNotFoundException::new);
+        employees.remove(employee);
             return employee;
-        }
-        throw new EmployeeNotFoundException();
     }
+
 
     public Employee findEmployee(String name,
                                  String secondName) {
-        Employee employee = new Employee(name, secondName);
-        if (employees.contains(employee)) {
-            employees.remove(employee);
-            return employee;
-        }
-        throw new EmployeeNotFoundException();
+        Employee employee = employees.stream()
+                .filter(employee1 -> employee1.getName().equals(name) && employee1.getSecondName().equals(secondName))
+                .findFirst()
+                .orElseThrow(EmployeeNotFoundException::new);
+        employees.remove(employee);
+        return employee;
     }
     public List<Employee> getAll(){
-        return Collections.unmodifiableList(employees);
+        return new ArrayList<>(employees);
     }
 }
